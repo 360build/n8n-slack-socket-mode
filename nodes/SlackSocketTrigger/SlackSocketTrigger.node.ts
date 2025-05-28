@@ -34,11 +34,38 @@ export class SlackSocketTrigger implements INodeType {
 			},
 		],
 		properties: [
+			// NEW PROPERTY: Trigger Type Selection
 			{
-				displayName: 'Trigger On',
-				name: 'trigger',
+				displayName: 'Trigger Type',
+				name: 'triggerType',
+				type: 'options',
+				options: [
+					{
+						name: 'Events',
+						value: 'events',
+						description: 'Trigger on various Slack events (e.g., app_mention, message, user_change).',
+					},
+					{
+						name: 'Slash Command',
+						value: 'slashCommand',
+						description: 'Trigger when a specific Slack slash command is invoked (e.g., /mycommand).',
+					},
+					{
+						name: 'Interactive Component (Actions)',
+						value: 'interactiveComponent',
+						description: 'Trigger on user interactions with buttons, select menus, etc. (block_actions).',
+					},
+				],
+				default: 'events', // Default to events
+				description: 'Select whether to trigger on Slack events, slash commands, or interactive components.',
+			},
+			// Existing 'Trigger On' (now conditionally displayed for 'events' mode)
+			{
+				displayName: 'Trigger On Events',
+				name: 'triggerEvents', // Renamed to avoid confusion
 				type: 'multiOptions',
-				options: [{
+				options: [
+					{
 						name: 'App Deleted',
 						value: 'app_deleted',
 						description: 'When a user has deleted an app',
@@ -98,11 +125,7 @@ export class SlackSocketTrigger implements INodeType {
 						value: 'bot_changed',
 						description: 'When a bot user was changed',
 					},
-					{
-						name: 'Button Interaction',
-						value: 'block_actions',
-						description: 'When a user interacts with buttons, including NPS-style ratings',
-					},
+					// Removed Button Interaction (block_actions) from here as it's now its own trigger type
 					{
 						name: 'Call Rejected',
 						value: 'call_rejected',
@@ -632,26 +655,89 @@ export class SlackSocketTrigger implements INodeType {
 						name: 'Workflow Unpublished',
 						value: 'workflow_unpublished',
 						description: 'When a workflow that contains a step supported by your app was unpublished',
-					},],
+					},
+				],
 				default: [],
+				description: 'Select the Slack events to trigger on.',
+				displayOptions: {
+					show: {
+						triggerType: ['events'], // Only show if 'Events' is selected
+					},
+				},
 			},
+			// New property for Slash Command Name (conditionally displayed for 'slashCommand' mode)
 			{
-				displayName: 'Regex Pattern',
+				displayName: 'Slash Command',
+				name: 'slashCommandName',
+				type: 'string',
+				default: '',
+				placeholder: '/yourcommand',
+				description: 'The full slash command to listen for (e.g., /mycommand). Leave empty to listen for any command.',
+				displayOptions: {
+					show: {
+						triggerType: ['slashCommand'], // Only show if 'Slash Command' is selected
+					},
+				},
+			},
+			// Existing Regex Pattern (conditionally displayed for 'events' mode and 'message' event)
+			{
+				displayName: 'Message Regex Pattern', // Renamed for clarity
 				name: 'regexPattern',
 				type: 'string',
 				default: '',
 				placeholder: 'regex pattern',
 				description:
-					'Regular expression to match against incoming Slack messages. Capture groups can be used to extract data.',
+					'Regular expression to match against incoming Slack messages. Capture groups can be used to extract data. Only applicable when "Message" event is selected.',
+				displayOptions: {
+					show: {
+						triggerType: ['events'],
+						triggerEvents: ['message'], // Only show if 'Events' is selected AND 'Message' is selected
+					},
+				},
 			},
+			// Existing Regex Flags (conditionally displayed for 'events' mode and 'message' event)
 			{
-				displayName: 'Regex Flags',
+				displayName: 'Message Regex Flags', // Renamed for clarity
 				name: 'regexFlags',
 				type: 'string',
 				default: 'g',
 				placeholder: 'gmi',
 				description:
-					'Flags for the regular expression (e.g., g for global, i for case-insensitive)',
+					'Flags for the regular expression (e.g., g for global, i for case-insensitive). Only applicable when "Message" event is selected.',
+				displayOptions: {
+					show: {
+						triggerType: ['events'],
+						triggerEvents: ['message'], // Only show if 'Events' is selected AND 'Message' is selected
+					},
+				},
+			},
+			// New property for Interactive Component Action ID (for 'interactiveComponent' mode)
+			{
+				displayName: 'Action ID Regex Pattern',
+				name: 'actionIdPattern',
+				type: 'string',
+				default: '.*', // Default to listen for all actions
+				placeholder: 'my_button_action|another_action_id',
+				description: 'Regular expression to match against the `action_id` of interactive components. Leave empty or use `.*` to listen for any action.',
+				displayOptions: {
+					show: {
+						triggerType: ['interactiveComponent'], // Only show if 'Interactive Component' is selected
+					},
+				},
+			},
+			{
+				displayName: 'Action ID Regex Flags',
+				name: 'actionIdFlags',
+				type: 'string',
+				default: 'i', // Case-insensitive by default for action IDs
+				placeholder: 'gmi',
+				description:
+					'Flags for the action ID regular expression (e.g., g for global, i for case-insensitive).',
+				displayOptions: {
+					show: {
+						triggerType: ['interactiveComponent'],
+					},
+				},
 			},
 		],
 	};
