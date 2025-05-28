@@ -16,8 +16,8 @@ interface SlackCredential {
 
 export class SlackSocketTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Slack Socket Mode Trigger',
-		name: 'slackSocketTrigger',
+		displayName: 'Slack Socket Mode Trigger V2 Trigger',
+		name: 'slackSocketTriggerV2Trigger',
 		group: ['trigger'],
 		version: 1,
 		description: 'Triggers workflow when a Slack message matches a regex pattern via Socket Mode',
@@ -43,12 +43,12 @@ export class SlackSocketTrigger implements INodeType {
 					{
 						name: 'Events',
 						value: 'events',
-						description: 'Trigger on various Slack events (e.g., app_mention, message, user_change).',
+						description: 'Trigger on various Slack events (e.g., app_mention, message, user_change)',
 					},
 					{
 						name: 'Slash Command',
 						value: 'slashCommand',
-						description: 'Trigger when a specific Slack slash command is invoked (e.g., /mycommand).',
+						description: 'Trigger when a specific Slack slash command is invoked (e.g., /mycommand)',
 					},
 					{
 						name: 'Interactive Component (Actions)',
@@ -57,7 +57,7 @@ export class SlackSocketTrigger implements INodeType {
 					},
 				],
 				default: 'events', // Default to events
-				description: 'Select whether to trigger on Slack events, slash commands, or interactive components.',
+				description: 'Select whether to trigger on Slack events, slash commands, or interactive components',
 			},
 			// Existing 'Trigger On' (now conditionally displayed for 'events' mode)
 			{
@@ -658,7 +658,7 @@ export class SlackSocketTrigger implements INodeType {
 					},
 				],
 				default: [],
-				description: 'Select the Slack events to trigger on.',
+				description: 'Select the Slack events to trigger on',
 				displayOptions: {
 					show: {
 						triggerType: ['events'], // Only show if 'Events' is selected
@@ -731,8 +731,7 @@ export class SlackSocketTrigger implements INodeType {
 				type: 'string',
 				default: 'i', // Case-insensitive by default for action IDs
 				placeholder: 'gmi',
-				description:
-					'Flags for the action ID regular expression (e.g., g for global, i for case-insensitive).',
+				description: 'Flags for the action ID regular expression (e.g., g for global, i for case-insensitive)',
 				displayOptions: {
 					show: {
 						triggerType: ['interactiveComponent'],
