@@ -1,6 +1,6 @@
 {
   "name": "@360build/n8n-nodes-slack-socket-mode",
-  "version": "1.2.3",
+  "version": "1.2.18",
   "description": "Slack Socket Mode Node for n8n that allows you to use +100 Slack events in your n8n instance with proxy mode",
   "keywords": [
     "n8n-community-node-package",
@@ -60,6 +60,7 @@
       "dist/credentials/SlackSocketCredentialsApi.credentials.js"
     ],
     "nodes": [
+      "dist/nodes/SlackSocketTriggerV2Trigger/SlackSocketTriggerV2Trigger.node.js",
       "dist/nodes/SlackSocketTrigger/SlackSocketTrigger.node.js"
     ]
   },
