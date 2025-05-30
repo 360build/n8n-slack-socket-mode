@@ -13,17 +13,17 @@ interface SlackCredential {
     signingSecret: string;
 }
 
-export class SlackSocketTriggerV2Trigger implements INodeType {
+export class SlackSocketDashTrigger implements INodeType {
     description: INodeTypeDescription = {
-        displayName: 'Slack Socket Mode Trigger / V2 Trigger',
-        name: 'slackSocketTriggerV2Trigger',
+        displayName: 'Slack Dash Trigger',
+        name: 'slackSocketDashTrigger',
         group: ['trigger'],
         version: 1,
-        description: 'Triggers workflow when a Slack message matches a regex pattern via Socket Mode',
+        description: 'Triggers workflow when a dash bot event gets triggered',
         defaults: {
-            name: 'Slack Socket Mode Trigger',
+            name: 'Slack Dash Trigger',
         },
-        icon: 'file:./assets/slack-socket-mode.svg',
+        icon: 'file:./assets/slack-dash.svg',
         inputs: [],
         outputs: [NodeConnectionType.Main],
         credentials: [
@@ -101,43 +101,52 @@ export class SlackSocketTriggerV2Trigger implements INodeType {
             ]);
         };
 
-        const setupEventListeners = () => {
-            const slashCommandName = this.getNodeParameter('slashCommandName', '') as string;
-
-            const handler = async (args: any) => {
-                await process.call(this, args); // ensure "this.emit" is accessible
-            };
-
-            if (slashCommandName) {
-                app.command(slashCommandName, handler);
-            } else {
-                app.command(/.*/, handler);
-            }
+        const slashCommandName = this.getNodeParameter('slashCommandName', '') as string;
+        const handler = async (args: any) => {
+            await process.call(this, args);
         };
 
-        setupEventListeners();
+        // Set up the listener(s) *before* starting the app
+        if (slashCommandName) {
+            app.command(slashCommandName, handler);
+        } else {
+            app.command(/.*/, handler);
+        }
 
-        const manualTriggerFunction = async () => {
-            try {
-                await app.start();
-                this.logger.info('Started Slack Socket app in test mode');
-            } catch (error) {
-                this.logger.error('Error starting Slack Socket app in test mode:', error);
-            }
-
-            return new Promise<void>((resolve) => {
-                resolve();
-            });
-        };
-
+        // Start the app for the appropriate mode
         if (this.getMode() === 'trigger') {
             try {
                 await app.start();
                 this.logger.info('Started Slack Socket app in trigger mode');
             } catch (error) {
                 this.logger.error('Error starting Slack Socket app in trigger mode:', error);
+                // Important: If app fails to start, the trigger should ideally indicate a failure.
+                // Depending on n8n's error handling for trigger nodes, you might throw the error.
+                throw error;
             }
         }
+
+        const manualTriggerFunction = async () => {
+            // This function is for "Test Workflow" button in n8n.
+            // It should also start the app to listen for events during testing.
+            try {
+                await app.start();
+                this.logger.info('Started Slack Socket app in test mode');
+            } catch (error) {
+                this.logger.error('Error starting Slack Socket app in test mode:', error);
+                throw error; // Propagate error for manual trigger as well
+            }
+
+            // For manual trigger, you might want a way to stop it after a certain time,
+            // or rely on the user manually stopping the test.
+            // Returning a promise that resolves immediately means the manual trigger finishes setup,
+            // but the app continues running in the background until the test is stopped.
+            return new Promise<void>((resolve) => {
+                // If you want the manual trigger to wait for a specific event or timeout,
+                // you would manage the resolve here. For a continuous listener, this is fine.
+                resolve();
+            });
+        };
 
         const closeFunction = async () => {
             try {

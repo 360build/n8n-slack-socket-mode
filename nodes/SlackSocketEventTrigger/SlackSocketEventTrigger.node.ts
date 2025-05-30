@@ -14,17 +14,17 @@ interface SlackCredential {
 	signingSecret: string;
 }
 
-export class SlackSocketTrigger implements INodeType {
+export class SlackSocketEventTrigger implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Slack Socket Mode Trigger',
-		name: 'slackSocketTrigger',
+		displayName: 'Slack Socket Event Trigger',
+		name: 'slackSocketEventTrigger',
 		group: ['trigger'],
 		version: 1,
 		description: 'Triggers workflow when a Slack message matches a regex pattern via Socket Mode',
 		defaults: {
 			name: 'Slack Socket Mode Trigger',
 		},
-		icon: 'file:./assets/slack-socket-mode.svg',
+		icon: 'file:./assets/slack-socket.svg',
 		inputs: [],
 		outputs: [NodeConnectionType.Main],
 		credentials: [
@@ -670,20 +670,28 @@ export class SlackSocketTrigger implements INodeType {
 			socketMode: true,
 		});
 
-		const process = async (root: any) => {
-			const { body, payload, context, event } = root;
+		// Modified process function to include ack()
+		const process = async ({ ack, body, payload, context, event }: any) => {
+			if (ack) { // Check if ack function exists, as it might not for all event types
+				await ack();
+			}
 			let result: IDataObject = { body, payload, context, event };
 			this.emit([this.helpers.returnJsonArray(result)]);
 		}
 
 		const setupEventListeners = () => {
+			// This needs to be a handler that can pass the ack function correctly
+			const handler = async (args: any) => {
+				await process.call(this, args); // Ensure "this.emit" is accessible and pass all args
+			};
+
 			filters.forEach((filter) => {
 				if (filter === 'message' && regExp) {
-					app.message(regExp, process);
+					app.message(regExp, handler); // Use the new handler
 				} else if (filter === 'block_actions') {
-					app.action(/.*/, process);
+					app.action(/.*/, handler); // Use the new handler
 				} else {
-					app.event(filter, process);
+					app.event(filter, handler); // Use the new handler
 				}
 			});
 		};
@@ -727,5 +735,3 @@ export class SlackSocketTrigger implements INodeType {
 		};
 	}
 }
-
-
